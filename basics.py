@@ -4,6 +4,97 @@ from background_scroll import Foreground, Background
 from sys import exit
 from random import randint
 
+class Player(pygame.sprite.Sprite):
+  def __init__(self):
+    super().__init__()
+    boo_fly1 = pygame.image.load('graphics/boo1.png').convert_alpha()
+    boo_fly1 = pygame.transform.scale(boo_fly1, (60, 60))
+  
+    boo_fly2 = pygame.image.load('graphics/boo2.png').convert_alpha()
+    boo_fly2 = pygame.transform.scale(boo_fly2, (60, 60))
+
+    self.boo_fly = [boo_fly1, boo_fly2]
+    self.boo_index = 0
+
+    self.image = self.boo_fly[self.boo_index]
+    self.rect = self.image.get_rect(midbottom = (200, 300))
+    self.gravity = 0
+    self.fall_angle = 0
+
+  def player_input(self):
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_SPACE]:
+      self.gravity = -6
+
+  def apply_gravity(self):
+    self.gravity += 1
+    self.rect.y += self.gravity
+    self.fall_angle = int(self.gravity * 1.8)
+
+  def animation_state(self):
+    self.boo_index += 0.1
+    if self.boo_index >= len(self.boo_fly):self.boo_index = 0
+    self.image = pygame.transform.rotate(self.boo_fly[int(self.boo_index)], self.fall_angle)
+
+  def update(self):
+    self.player_input()
+    self.apply_gravity()
+    self.animation_state()
+
+class Mario(pygame.sprite.Sprite):
+  def __init__(self, type):
+    super().__init__()
+    if type == 'mario':
+      mario_walk1 = pygame.image.load('graphics/mario/Anibody1.png').convert_alpha()
+      mario_walk1 = pygame.transform.scale(mario_walk1, (50, 64))
+      mario_walk2 = pygame.image.load('graphics/mario/Anibody2.png').convert_alpha()
+      mario_walk2 = pygame.transform.scale(mario_walk2, (50, 64))
+      mario_walk3 = pygame.image.load('graphics/mario/Anibody3.png').convert_alpha()
+      mario_walk3 = pygame.transform.scale(mario_walk3, (50, 64))
+
+      mario_jump = pygame.image.load('graphics/Deadpool.png').convert_alpha()
+      mario_jump = pygame.transform.scale(mario_jump, (50, 64))
+
+      self.walk_frames = [mario_walk1, mario_walk3, mario_walk2, mario_walk3, mario_jump]
+      self.animation_index = 0
+      self.gravity = 0
+      self.y_pos = 340
+
+      self.image = self.walk_frames[int(self.animation_index)]
+      self.rect = self.image.get_rect(midbottom = (randint(-400, -100), self.y_pos))
+
+      self.movement_list = []
+
+
+
+  def animation_state(self):
+    self.animation_index += 0.1
+    self.image = self.walk_frames[int(self.animation_index)]
+    if self.rect.bottom < self.y_pos:
+      print(self.rect.bottom)
+      self.animation_index = 4
+    if self.rect.bottom == self.y_pos:
+      if self.animation_index >= (len(self.walk_frames)-1.1):
+        self.animation_index = 0
+    if (score % 10) == 0:
+      self.gravity = -12
+
+  def apply_gravity(self):
+    self.gravity += 1
+    self.rect.y += self.gravity
+    if self.rect.bottom >= self.y_pos: self.rect.bottom = self.y_pos
+
+      
+  def update(self):
+    self.animation_state()
+    self.apply_gravity()
+    self.rect.x += 8
+
+  def destroy(self):
+    if self.rect.x >= 900:
+      self.kill()
+
+
 WINDOW_SIZE = (800, 400)
 
 def display_score():
@@ -77,6 +168,13 @@ game_active = False
 start_time = 0
 score = 0
 
+player = pygame.sprite.GroupSingle()
+player.add(Player())
+
+mario = pygame.sprite.Group()
+
+
+
 foreground_scroll = Foreground()
 background_scroll = Background()
 
@@ -132,10 +230,6 @@ boo_fly1 = pygame.transform.scale(boo_fly1, (60, 60))
 boo_fly2 = pygame.image.load('graphics/boo2.png').convert_alpha()
 boo_fly2 = pygame.transform.scale(boo_fly2, (60, 60))
 
-boo_fly3 = pygame.image.load('graphics/boo1.png').convert_alpha()
-boo_fly3 = pygame.transform.scale(boo_fly1, (120, 120))
-boo_rect = boo_fly3.get_rect(midbottom = (200, 400))
-
 boo_fly = [boo_fly1, boo_fly2]
 boo_index = 0
 player_surf = boo_fly[boo_index]
@@ -176,12 +270,13 @@ while True:
           # if player_rect.bottom >= 340: (mario jump mechanic)
             player_gravity = -6
 
-#Randomisation of Enemies and Pipes-----------
+# Randomisation of Enemies and Pipes-----------
       if event.type == obstacle_timer:
-        if randint(0,2):
-          mario_rect_list.append(mario_surf.get_rect(bottomright = (randint(-400, -100), 340)))
-        else:
-          mario_rect_list.append(mario_surf.get_rect(bottomright = (randint(-400, -100), 340)))
+        mario.add(Mario('mario'))
+        # if randint(0,2):
+        #   mario_rect_list.append(mario_surf.get_rect(bottomright = (randint(-400, -100), 340)))
+        # else:
+        #   mario_rect_list.append(mario_surf.get_rect(bottomright = (randint(-400, -100), 340)))
       
       if event.type == pipes_timer:
         pipes_index = randint(0,4)
@@ -237,12 +332,18 @@ while True:
     #This creates floor (add to turn into mario jump mechanic)
     screen.blit(player_surf, player_rect)
 
+    player.draw(screen)
+    player.update()
+
     #ENEMY_MOVEMENT---------------
     mario_rect_list = enemy_movement(mario_rect_list)
     mario_gravity += 0.7
     for mario_rect in mario_rect_list:
       mario_rect.y += mario_gravity
       if mario_rect.bottom >= 340: mario_rect.bottom = 340
+
+    mario.draw(screen)
+    mario.update()
 
 
     #OBSTACLE_MOVMENT-------------
