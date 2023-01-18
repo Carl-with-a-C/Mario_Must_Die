@@ -65,8 +65,6 @@ class Mario(pygame.sprite.Sprite):
 
       self.movement_list = []
 
-
-
   def animation_state(self):
     self.animation_index += 0.1
     self.image = self.walk_frames[int(self.animation_index)]
@@ -83,7 +81,6 @@ class Mario(pygame.sprite.Sprite):
     self.gravity += 1
     self.rect.y += self.gravity
     if self.rect.bottom >= self.y_pos: self.rect.bottom = self.y_pos
-
       
   def update(self):
     self.animation_state()
@@ -94,8 +91,8 @@ class Mario(pygame.sprite.Sprite):
     if self.rect.x >= 900:
       self.kill()
 
-
 WINDOW_SIZE = (800, 400)
+
 
 def display_score():
   current_time = pygame.time.get_ticks() - start_time
